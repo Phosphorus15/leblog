@@ -49,12 +49,16 @@ dynamicUser username = renderText (
 
 staticPost = renderText (
     html_ $ do
-        head_ $ title_ "Phosphorus' Blog";
+        head_ $ title_ "Le Blog";
         body_ $ do
             h1_ "Create new post";
             hr_ [];
             a_ [href_ "./"] "Return";
             form_ [method_ "post"] $ do
+                div_ "Title :";
+                input_ [type_ "text", name_ "title"];
+                br_ [];
+                div_ "Context :";
                 textarea_ [rows_ "6", cols_ "36", name_ "content"] "";
                 br_ [];
                 div_ "Secret code :";
