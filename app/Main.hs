@@ -2,6 +2,7 @@
 import Web.Spock
 import qualified Page
 import qualified Renderer
+import qualified Side
 import Web.Spock.Config
 import Database.PostgreSQL.Simple
 import Network.Wai.Middleware.Static
