@@ -2,11 +2,12 @@
 module Page where
 
 import Lucid
+import Data.String
 
 staticMain = renderText (
     html_ $ do
         head_ $ do 
-            title_ "Phosphorus' Blog";
+            title_ "Le Blog";
             termWith "script" [src_ "https://cdn.bootcss.com/jquery/3.4.1/jquery.min.js"] "";
             link_ [rel_ "stylesheet", href_ "https://cdn.bootcss.com/highlight.js/9.15.10/styles/default.min.css"];
             termWith "script" [src_ "https://cdn.bootcss.com/highlight.js/9.15.10/highlight.min.js"] "";
@@ -19,6 +20,28 @@ staticMain = renderText (
             a_ [href_ "./post"] "Create new post";
             a_ [class_ "padding"] "   ";
             a_ [href_ "./register"] "Register";
+            h3_ "Recent Posts : ";
+            div_ [class_ "posts-billboard", id_ "posts-billboard"] $ do
+                div_ [class_ "flipping-load", id_ "loading-text"] "Now loading...";
+                        )
+
+dynamicUser username = renderText (
+    html_ $ do
+        head_ $ do 
+            title_ $ fromString $ username ++ "'s Blog";
+            termWith "script" [src_ "https://cdn.bootcss.com/jquery/3.4.1/jquery.min.js"] "";
+            link_ [rel_ "stylesheet", href_ "https://cdn.bootcss.com/highlight.js/9.15.10/styles/default.min.css"];
+            termWith "script" [src_ "https://cdn.bootcss.com/highlight.js/9.15.10/highlight.min.js"] "";
+            termWith "script" [src_ "https://cdn.bootcss.com/highlight.js/9.15.10/languages/rust.min.js"] "";
+            termWith "script" [src_ "https://cdn.bootcss.com/mathjax/2.7.6/MathJax.js?config=TeX-AMS-MML_HTMLorMML"] "";
+            termWith "script" [src_ $ "/user.js" ] "";
+            meta_ [name_ "current-user", content_ $ fromString $ username];
+        body_ $ do
+            h1_ $ fromString $ "Welcome to " ++ username ++ "'s page";
+            hr_ [];
+            a_ [href_ "/"] "Return";
+            a_ [class_ "padding"] "   ";
+            a_ [href_ "/register"] "Register";
             h3_ "Posts : ";
             div_ [class_ "posts-billboard", id_ "posts-billboard"] $ do
                 div_ [class_ "flipping-load", id_ "loading-text"] "Now loading...";

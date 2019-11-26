@@ -15,6 +15,7 @@ import qualified Network.HTTP.Types.Status as Status
 import qualified Data.Text as T
 import Data.UnixTime
 import CMarkGFM
+import qualified Text.Read as R
 
 type AppAction a = SpockActionCtx () Connection AppSession AppState a
 
@@ -44,30 +45,46 @@ app :: SpockM Connection AppSession AppState ()
 app = do
     middleware (staticPolicy (addBase "static"))
     get root $ html $ Lazy.toStrict Page.staticMain
-    get "posts" $ do
-      xs<-runQuery $ \conn -> 
-        query_ conn  "select id,data,date,poster from posts"
-      json (xs::[BlogPost])
+    get "posts" requestPostsAction
     get "post" $ html $ Lazy.toStrict Page.staticPost
-    post "post" $ do
-        requestParam <- parsePost;
-        case requestParam of
-            (Nothing, _) -> setStatus Status.status400 >> text "Missing content."
-            (_, Nothing) -> setStatus Status.status400 >> text "Missing secret code."
-            (Just content, Just secret) -> do
-                xs <-runQuery $ \conn -> 
-                    query conn  "select uid,secret,username,privilege from users where secret = ?" (Only secret);
-                case xs :: [UserToken] of
-                    [] -> setStatus Status.status400 >> text "Illegal secret code."
-                    (user:xs) -> do
-                        timestamp <- liftIO getUnixTime >>= return . show . utSeconds;
-                        _ <- runQuery $ \conn -> 
-                            execute conn  "insert into posts (data, date, poster) values(?, ?, ?)" (content, read timestamp :: Int , name user);
-                        text "ok"
+    get ("u" <//> var) $ \user -> do
+        html $ Lazy.toStrict $ Page.dynamicUser user
+    post "post" postAction
 
+requestPostsAction :: AppAction ()
+requestPostsAction = do
+    (select, _) <- parsePostRequest
+    xs<-runQuery $ \conn -> 
+      case select of
+        Nothing -> query_ conn  "select id,data,date,poster from posts order by date desc;"
+        Just username -> query conn "select id,data,date,poster from posts where poster=? order by date desc;" (Only username)
+    json (xs::[BlogPost])
+
+postAction :: AppAction ()
+postAction = do
+    requestParam <- parsePost;
+    case requestParam of
+        (Nothing, _) -> setStatus Status.status400 >> text "Missing content."
+        (_, Nothing) -> setStatus Status.status400 >> text "Missing secret code."
+        (Just content, Just secret) -> do
+            xs <-runQuery $ \conn -> 
+                query conn  "select uid,secret,username,privilege from users where secret = ?" (Only secret);
+            case xs :: [UserToken] of
+                [] -> setStatus Status.status400 >> text "Illegal secret code."
+                (user:xs) -> do
+                    timestamp <- liftIO getUnixTime >>= return . show . utSeconds;
+                    _ <- runQuery $ \conn -> 
+                        execute conn  "insert into posts (data, date, poster) values(?, ?, ?)" (content, read timestamp :: Int , name user);
+                    redirect "/"
 
 parsePost :: MonadIO m => ActionCtxT ctx m (Maybe Text, Maybe Text)
 parsePost = do
     content <- param "content";
     secret <- param "secret";
     pure (content, secret)
+
+parsePostRequest :: MonadIO m => ActionCtxT ctx m (Maybe Text, Maybe Int)
+parsePostRequest = do
+    username <- param "user";
+    maxpost <- param "max";
+    pure (username, maxpost)

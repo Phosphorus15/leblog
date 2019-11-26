@@ -11,7 +11,7 @@ window.onload = function () {
         },
         "HTML-CSS": { availableFonts: ["TeX"] }
     });
-    $.get("/posts", function (data) {
+    $.get("/posts?user=" + document.getElementsByName('current-user')[0].content, function (data) {
         if (data === null || data.length === 0) {
             document.getElementById("loading-text").innerText = "No post found";
             return;
@@ -24,8 +24,7 @@ window.onload = function () {
             let component = document.createElement("div");
             let header = document.createElement("div");
             header.className = "header-info";
-            header.innerHTML = "Created by : <a href=\"/u/"+ post.poster +"\"> </a>,   Date : " + new Date(post.date * 1000);
-            $('a', header)[0].innerText = post.poster;
+            header.innerHTML = "Created by : " + post.poster + ",   Date : " + new Date(post.date * 1000);
             component.appendChild(header);
             component.innerHTML += post.data;
             processHtmlFront(component);
