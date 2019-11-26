@@ -57,16 +57,18 @@ app = do
     get "post" $ html $ Lazy.toStrict Page.staticPost
     get ("u" <//> var) $ \user -> do
         html $ Lazy.toStrict $ Page.dynamicUser user
+    get ("p" <//> var) showPostAction
     post "post" postAction
     hookAny GET $ \_ -> text "Page not found"
 
 requestPostsAction :: AppAction ()
 requestPostsAction = do
-    (select, _) <- parsePostRequest
+    (select, pid) <- parsePostRequest
     xs<-runQuery $ \conn -> 
-      case select of
-        Nothing -> query_ conn  "select id,title,data,date,poster from posts order by date desc;"
-        Just username -> query conn "select id,title,data,date,poster from posts where poster=? order by date desc;" (Only username)
+      case (select, pid) of
+        (Nothing, Nothing) -> query_ conn  "select id,title,data,date,poster from posts order by date desc;"
+        (Just username, _) -> query conn "select id,title,data,date,poster from posts where poster=? order by date desc;" (Only username)
+        (_, Just pid) -> query conn "select id,title,data,date,poster from posts where id=? order by date desc;" (Only pid)
     json (xs::[BlogPost])
 
 postAction :: AppAction ()
@@ -85,6 +87,18 @@ postAction = do
                     redirect "/"
         _ -> setStatus Status.status400 >> text "Missing params."
 
+showPostAction :: Text -> AppAction ()
+showPostAction pid = do
+    case R.readMaybe $ T.unpack $ Lazy.toStrict pid :: Maybe Int of
+        Just pid -> do
+            posts <- runQuery $ \conn ->
+                query conn "select * from posts where id = ?" [pid :: Int];
+            case posts :: [BlogPost] of
+                [] -> setStatus Status.status404 >> text "Post id not found."
+                (post:xs) -> do
+                    html $ Lazy.toStrict $ Page.dynamicPost pid (poster post)
+        Nothing ->  setStatus Status.status400 >> text "Invalid post request."
+
 parsePost :: MonadIO m => ActionCtxT ctx m (Maybe Text, Maybe Text, Maybe Text)
 parsePost = do
     content <- param "content";
@@ -99,5 +113,5 @@ mapEmpty (Just t) = if (Lazy.length $ strip t) == 0 then Nothing else Just t
 parsePostRequest :: MonadIO m => ActionCtxT ctx m (Maybe Text, Maybe Int)
 parsePostRequest = do
     username <- param "user";
-    maxpost <- param "max";
-    pure (mapEmpty username, maxpost)
+    pid <- param "id";
+    pure (mapEmpty username, pid)
