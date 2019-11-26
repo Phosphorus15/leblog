@@ -42,8 +42,8 @@ main :: IO ()
 main = do
     pool<-createPool ( do 
         conn <- connect (ConnectInfo "localhost" 5432 "phosphorus15" "12345" "blog");
-        _ <- execute_ conn "create table if not exists users (uid integer NOT NULL,secret character varying(512),username character varying(128),privilege integer, ty integer);";
-        _ <- execute_ conn "create table if not exists posts (id integer NOT NULL,title character varying(256),data character varying(16384),date integer,poster character varying(128));";
+        _ <- execute_ conn "create table if not exists users (uid SERIAL PRIMARY KEY,secret character varying(512),username character varying(128),privilege integer, ty integer);";
+        _ <- execute_ conn "create table if not exists posts (id SERIAL PRIMARY KEY,title character varying(256),data character varying(16384),date integer,poster character varying(128));";
         return conn 
                      ) close 1 10 10;
     spockCfg <- defaultSpockCfg EmptySession (PCPool pool) EmptyState
@@ -58,14 +58,15 @@ app = do
     get ("u" <//> var) $ \user -> do
         html $ Lazy.toStrict $ Page.dynamicUser user
     post "post" postAction
+    hookAny GET $ \_ -> text "Page not found"
 
 requestPostsAction :: AppAction ()
 requestPostsAction = do
     (select, _) <- parsePostRequest
     xs<-runQuery $ \conn -> 
       case select of
-        Nothing -> query_ conn  "select id,data,date,poster from posts order by date desc;"
-        Just username -> query conn "select id,data,date,poster from posts where poster=? order by date desc;" (Only username)
+        Nothing -> query_ conn  "select id,title,data,date,poster from posts order by date desc;"
+        Just username -> query conn "select id,title,data,date,poster from posts where poster=? order by date desc;" (Only username)
     json (xs::[BlogPost])
 
 postAction :: AppAction ()
