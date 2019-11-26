@@ -44,7 +44,6 @@ window.onload = function () {
         component.appendChild(header);
         component.appendChild(read);
         processHtmlFront(component);
-        base.appendChild(component);
     })
 }
 

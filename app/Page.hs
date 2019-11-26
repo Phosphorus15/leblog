@@ -49,8 +49,8 @@ dynamicUser username = renderText (
                         a_ [href_ "/", class_ "logo"] $ fromString $ "Welcome to " ++ username ++ "'s page";
                     nav_ [class_ "links"] $ do
                         ul_ [class_ "hide-links"] $ do
-                            li_ [] $ a_ [href_ "./post"] "Return";
-                            li_ [] $ a_ [href_ "./register"] "Register";
+                            li_ [] $ a_ [href_ "/"] "Return";
+                            li_ [] $ a_ [href_ "/register"] "Register";
                 main_ [class_ "main"] $ do
                     h3_ "Recent Posts : ";
                     section_ [id_ "posts-billboard", class_ "posts", style_ "position: relative;"] $ do
@@ -77,7 +77,7 @@ dynamicPost pid username = renderText (
                     nav_ [class_ "links"] $ do
                         ul_ [class_ "hide-links"] $ do
                             li_ [] $ a_ [href_ $ fromString $ "/u/" ++ username ] "Return";
-                            li_ [] $ a_ [href_ "./register"] "Register";
+                            li_ [] $ a_ [href_ "/register"] "Register";
                 main_ [class_ "main"] $ do
                     article_ [id_ "posts-billboard", class_ "post"] $ do
                         div_ [class_ "flipping-load", id_ "loading-text"] "Now loading...";

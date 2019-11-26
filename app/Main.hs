@@ -55,6 +55,7 @@ app = do
     get root $ html $ Lazy.toStrict Page.staticMain
     get "posts" requestPostsAction
     get "post" $ html $ Lazy.toStrict Page.staticPost
+    get "register" $ text "Please refer to admin for more info., email : steepout@qq.com"
     get ("u" <//> var) $ \user -> do
         html $ Lazy.toStrict $ Page.dynamicUser user
     get ("p" <//> var) showPostAction
