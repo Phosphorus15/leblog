@@ -10,19 +10,24 @@ staticMain = renderText (
             title_ "Le Blog";
             termWith "script" [src_ "https://cdn.bootcss.com/jquery/3.4.1/jquery.min.js"] "";
             link_ [rel_ "stylesheet", href_ "https://cdn.bootcss.com/highlight.js/9.15.10/styles/default.min.css"];
+            link_ [rel_ "stylesheet", href_ "./style.css"];
             termWith "script" [src_ "https://cdn.bootcss.com/highlight.js/9.15.10/highlight.min.js"] "";
             termWith "script" [src_ "https://cdn.bootcss.com/highlight.js/9.15.10/languages/rust.min.js"] "";
             termWith "script" [src_ "https://cdn.bootcss.com/mathjax/2.7.6/MathJax.js?config=TeX-AMS-MML_HTMLorMML"] "";
             termWith "script" [src_ "./main.js"] "";
-        body_ $ do
-            h1_ "Welcome to the blogging system";
-            hr_ [];
-            a_ [href_ "./post"] "Create new post";
-            a_ [class_ "padding"] "   ";
-            a_ [href_ "./register"] "Register";
-            h3_ "Recent Posts : ";
-            div_ [class_ "posts-billboard", id_ "posts-billboard"] $ do
-                div_ [class_ "flipping-load", id_ "loading-text"] "Now loading...";
+        body_ [style_ "background: url(https://cdn.jsdelivr.net/gh/frontendsophie/hexo-theme-autumn@1.0.0/source/img/button-bg.png) #f3f3f3"] $ do
+            div_ [class_ "container"] $ do
+                header_ [class_ "header"] $ do
+                    h1_ [class_ "title"] $ do
+                        a_ [href_ "/", class_ "logo"] "Welcome to the blogging system";
+                    nav_ [class_ "links"] $ do
+                        ul_ [class_ "hide-links"] $ do
+                            li_ [] $ a_ [href_ "./post"] "Create new post";
+                            li_ [] $ a_ [href_ "./register"] "Register";
+                main_ [class_ "main"] $ do
+                    h3_ "Recent Posts : ";
+                    section_ [id_ "posts-billboard", class_ "posts", style_ "position: relative;"] $ do
+                        div_ [class_ "flipping-load", id_ "loading-text"] "Now loading...";
                         )
 
 dynamicUser username = renderText (
@@ -31,20 +36,25 @@ dynamicUser username = renderText (
             title_ $ fromString $ username ++ "'s Blog";
             termWith "script" [src_ "https://cdn.bootcss.com/jquery/3.4.1/jquery.min.js"] "";
             link_ [rel_ "stylesheet", href_ "https://cdn.bootcss.com/highlight.js/9.15.10/styles/default.min.css"];
+            link_ [rel_ "stylesheet", href_ "/style.css"];
             termWith "script" [src_ "https://cdn.bootcss.com/highlight.js/9.15.10/highlight.min.js"] "";
             termWith "script" [src_ "https://cdn.bootcss.com/highlight.js/9.15.10/languages/rust.min.js"] "";
             termWith "script" [src_ "https://cdn.bootcss.com/mathjax/2.7.6/MathJax.js?config=TeX-AMS-MML_HTMLorMML"] "";
-            termWith "script" [src_ $ "/user.js" ] "";
+            termWith "script" [src_ "/user.js"] "";
             meta_ [name_ "current-user", content_ $ fromString $ username];
-        body_ $ do
-            h1_ $ fromString $ "Welcome to " ++ username ++ "'s page";
-            hr_ [];
-            a_ [href_ "/"] "Return";
-            a_ [class_ "padding"] "   ";
-            a_ [href_ "/register"] "Register";
-            h3_ "Posts : ";
-            div_ [class_ "posts-billboard", id_ "posts-billboard"] $ do
-                div_ [class_ "flipping-load", id_ "loading-text"] "Now loading...";
+        body_ [style_ "background: url(https://cdn.jsdelivr.net/gh/frontendsophie/hexo-theme-autumn@1.0.0/source/img/button-bg.png) #f3f3f3"] $ do
+            div_ [class_ "container"] $ do
+                header_ [class_ "header"] $ do
+                    h1_ [class_ "title"] $ do
+                        a_ [href_ "/", class_ "logo"] $ fromString $ "Welcome to " ++ username ++ "'s page";
+                    nav_ [class_ "links"] $ do
+                        ul_ [class_ "hide-links"] $ do
+                            li_ [] $ a_ [href_ "./post"] "Create new post";
+                            li_ [] $ a_ [href_ "./register"] "Register";
+                main_ [class_ "main"] $ do
+                    h3_ "Recent Posts : ";
+                    section_ [id_ "posts-billboard", class_ "posts", style_ "position: relative;"] $ do
+                        div_ [class_ "flipping-load", id_ "loading-text"] "Now loading...";
                         )
 
 staticPost = renderText (

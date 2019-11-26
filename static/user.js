@@ -21,15 +21,38 @@ window.onload = function () {
         const base = document.getElementById("posts-billboard");
         base.appendChild(document.createElement("hr"));
         for (post of data) {
-            let component = document.createElement("div");
-            let header = document.createElement("div");
-            header.className = "header-info";
-            header.innerHTML = "Created by : " + post.poster + ",   Date : " + new Date(post.date * 1000);
+            let component = document.createElement("article");
+            let read = document.createElement("div");
+            let articleTo = document.createElement("a");
+            let readTo = document.createElement("a");
+            articleTo.innerText = post.title;
+            readTo.className = "more-link";
+            readTo.href = "/p/" + post.id;
+            articleTo.href = "/p/" + post.id;
+            read.className = "post-content";
+            readTo.innerText = "Read article";
+            read.appendChild(readTo);
+            let title = document.createElement("h1");
+            title.className = "post-title";
+            title.appendChild(articleTo);
+            component.className = "post";
+            let header = document.createElement("ul");
+            let author = document.createElement("li");
+            let nested = document.createElement("a");
+            nested.href = "/u/" + post.poster;
+            let date = document.createElement("li");
+            header.className = "post-date";
+            header.appendChild(author);
+            header.appendChild(date);
+            date.innerText = new Date(post.date * 1000).toLocaleDateString();
+            nested.style = "text-decoration: none; color: #bbb";
+            nested.innerText = post.poster;
+            author.appendChild(nested);
+            component.appendChild(title);
             component.appendChild(header);
-            component.innerHTML += post.data;
+            component.appendChild(read);
             processHtmlFront(component);
             base.appendChild(component);
-            base.appendChild(document.createElement("hr"));
         }
     })
 }
