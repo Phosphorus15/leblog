@@ -1,4 +1,4 @@
 .stack-work/
-leblog.cabal
+leblog-exe
 sendgrid.token
 *~

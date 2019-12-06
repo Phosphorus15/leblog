@@ -1,0 +1,81 @@
+cabal-version: 1.12
+
+-- This file has been generated from package.yaml by hpack version 0.31.2.
+--
+-- see: https://github.com/sol/hpack
+--
+-- hash: f1272797e53a68e1c8d4d483f0de415d3f6680ef94bf53326c91c23bc32f9add
+
+name:           leblog
+version:        0.1.0.0
+description:    Please see the README on GitHub at <https://github.com/githubuser/leblog#readme>
+homepage:       https://github.com/githubuser/leblog#readme
+bug-reports:    https://github.com/githubuser/leblog/issues
+author:         Author name here
+maintainer:     example@example.com
+copyright:      2019 Author name here
+license:        BSD3
+license-file:   LICENSE
+build-type:     Simple
+extra-source-files:
+    README.md
+    ChangeLog.md
+
+source-repository head
+  type: git
+  location: https://github.com/githubuser/leblog
+
+library
+  exposed-modules:
+      Lib
+  other-modules:
+      Paths_leblog
+  hs-source-dirs:
+      src
+  build-depends:
+      base >=4.7 && <5
+  default-language: Haskell2010
+
+executable leblog-exe
+  main-is: Main.hs
+  other-modules:
+      Page
+      Renderer
+      Paths_leblog
+  hs-source-dirs:
+      app
+  ghc-options: -threaded -rtsopts -with-rtsopts=-N
+  build-depends:
+      base >=4.7 && <5
+    , leblog
+    , bytestring
+    , Spock >= 0.11
+    , mtl
+    , text
+    , containers
+    , postgresql-simple
+    , resource-pool
+    , aeson
+    , cmark-gfm
+    , lucid
+    , http-types
+    , wai-middleware-static
+    , uuid
+    , unix-time
+    , xss-sanitize
+    , lens
+    , http-conduit
+  default-language: Haskell2010
+
+test-suite leblog-test
+  type: exitcode-stdio-1.0
+  main-is: Spec.hs
+  other-modules:
+      Paths_leblog
+  hs-source-dirs:
+      test
+  ghc-options: -threaded -rtsopts -with-rtsopts=-N
+  build-depends:
+      base >=4.7 && <5
+    , leblog
+  default-language: Haskell2010
