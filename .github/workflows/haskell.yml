@@ -8,6 +8,8 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+    - name: Setup PostgreSQL
+      uses: Harmon758/postgresql-action@v1.0.0
     - uses: actions/checkout@v1
     - uses: actions/setup-haskell@v1
       with:
