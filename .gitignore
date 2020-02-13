@@ -1,4 +1,5 @@
 .stack-work/
 leblog-exe
 sendgrid.token
+recaptcha.server
 *~

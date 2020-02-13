@@ -33,6 +33,13 @@ packages:
   original:
     hackage: stm-containers-0.2.16
 - completed:
+    hackage: unordered-containers-0.2.10.0@sha256:5e9b095a9283d9e2f064fec73a81a6b6ea0b7fda3f219a8175785d2d2a3de204,5199
+    pantry-tree:
+      size: 1415
+      sha256: dfc2d75f4e59c03e2c68be6909b577f26991367134eaac06a407e940e66856ae
+  original:
+    hackage: unordered-containers-0.2.10.0
+- completed:
     hackage: focus-0.1.5.2@sha256:fc5c76a5be3a9a1c456106d6f389939299c7e05a1a24938b909f043e36a3e37b,1519
     pantry-tree:
       size: 206

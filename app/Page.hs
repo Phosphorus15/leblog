@@ -2,6 +2,7 @@
 module Page where
 
 import Lucid
+import Lucid.Base
 import Data.String
 
 staticMain = renderText (
@@ -102,3 +103,14 @@ staticPost = renderText (
                 br_ [];
                 input_ [type_ "submit"];
                         )
+
+staticRegister = renderText (
+    html_ $ do
+        head_ $ title_ "Register";
+                termWith "script" [src_ "//recaptcha.net/recaptcha/api.js", makeAttribute "async" "", makeAttribute "defer" ""] "";
+        body_ $ do
+            form_ [method_ "post"] $ do
+                div_ [class_ "g-recaptcha", makeAttribute "data-sitekey" "6LeYpckUAAAAAN_aUWfpPXJYuC7J6DtbKmQAMZKE"] "";
+                br_ [];
+                input_ [type_ "submit"];
+                            )

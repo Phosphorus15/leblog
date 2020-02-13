@@ -19,6 +19,7 @@ import CMarkGFM
 import qualified Text.HTML.SanitizeXSS as S
 import qualified Text.Read as R
 import qualified Control.Lens as L
+import Control.Monad.IO.Class
 
 type AppAction a = SpockActionCtx () Connection AppSession AppState a
 
@@ -56,11 +57,12 @@ app = do
     get root $ html $ Lazy.toStrict Page.staticMain
     get "posts" requestPostsAction
     get "post" $ html $ Lazy.toStrict Page.staticPost
-    get "register" $ text "Please refer to admin for more info., email : steepout@qq.com"
+    get "register" $ html $ Lazy.toStrict Page.staticRegister
     get ("u" <//> var) $ \user -> do
         html $ Lazy.toStrict $ Page.dynamicUser user
     get ("p" <//> var) showPostAction
-    post "post" postAction
+    post "post" registerAction
+    post "register" registerAction
     hookAny GET $ \_ -> text "Page not found"
 
 requestPostsAction :: AppAction ()
@@ -88,6 +90,14 @@ postAction = do
                         execute conn  "insert into posts (data, date, poster, title) values(?, ?, ?, ?)" (content, read timestamp :: Int , name user, title);
                     redirect "/"
         _ -> setStatus Status.status400 >> text "Missing params."
+
+registerAction :: AppAction ()
+registerAction = do
+    (recaptcha) <- parseRegisterRequest;
+    case recaptcha of
+        (Just token) -> do response <- liftIO $ Side.recaptcha $ T.unpack $ Lazy.toStrict token;
+                           if response then text "okay" else text "nope"
+        _ -> setStatus Status.status400 >> text "Recaptcha failed."
 
 showPostAction :: Text -> AppAction ()
 showPostAction pid = do
@@ -117,3 +127,8 @@ parsePostRequest = do
     username <- param "user";
     pid <- param "id";
     pure (mapEmpty username, pid)
+
+parseRegisterRequest :: MonadIO m => ActionCtxT ctx m (Maybe Text)
+parseRegisterRequest = do
+    recaptcha <- param "g-recaptcha-response";
+    pure (recaptcha)
