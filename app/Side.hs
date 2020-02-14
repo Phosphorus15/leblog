@@ -10,7 +10,7 @@ import Data.Aeson
 import Data.HashMap.Strict
 
 -- Sendgrid mail api integration
-sendmail :: String -> String -> IO Int
+sendmail :: String -> String -> IO String
 sendmail value code = do
     token <- readFile "sendgrid.token"; -- This token has been absolutely hidden
     let req = setRequestBody (fromString $ formatMail value code) $ 
@@ -18,7 +18,7 @@ sendmail value code = do
               setRequestHeader "Content-Type" ["application/json"] $
               "POST https://api.sendgrid.com/v3/mail/send"
     res <- httpBS req
-    pure (getResponseStatusCode res)
+    pure $ B8.unpack $ getResponseBody res
 
 -- Google recaptcha verification
 recaptcha :: String -> IO Bool
@@ -40,4 +40,4 @@ recaptchaRaw value = do
     pure $ B8.unpack $ getResponseBody res
 
 formatMail :: String -> String -> String
-formatMail tomail code = "{\"personalizations\": [{\"to\": [{\"email\": \"" ++ tomail ++ "\"}]}],\"reply-to\": {\"email\", \"phosphophate@gmail.com\"},\"from\": {\"email\": \"no-reply@leblog.com\"},\"subject\": \"Your verification code at LeBlog\",\"content\": [{\"type\": \"text/html\", \"value\": \"Hi, there !<br/>Your verification code for registry is <code>"++ code ++"</code> .\"}]}"
+formatMail tomail code = "{\"personalizations\": [{\"to\": [{\"email\": \"" ++ tomail ++ "\"}]}],\"reply-to\": {\"email\", \"phosphophate@gmail.com\"},\"from\": {\"email\": \"no-reply@leblog.com\"},\"subject\": \"Your verification code at LeBlog\",\"content\": [{\"type\": \"text/html\", \"value\": \"Hi, there !<br/>Please click the link below to complete your registration: <br/> <a href=\\\"http://leblog.me/re/"++ code ++"\\\">Link</a> .\"}]}"

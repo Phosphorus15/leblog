@@ -33,7 +33,7 @@ staticMain = renderText (
 
 dynamicUser username = renderText (
     html_ $ do
-        head_ $ do 
+        head_ $ do
             title_ $ fromString $ username ++ "'s Blog";
             termWith "script" [src_ "https://cdn.bootcss.com/jquery/3.4.1/jquery.min.js"] "";
             link_ [rel_ "stylesheet", href_ "https://cdn.bootcss.com/highlight.js/9.15.10/styles/default.min.css"];
@@ -110,6 +110,9 @@ staticRegister = renderText (
                 termWith "script" [src_ "//recaptcha.net/recaptcha/api.js", makeAttribute "async" "", makeAttribute "defer" ""] "";
         body_ $ do
             form_ [method_ "post"] $ do
+                div_ "Your email here:";
+                input_ [type_ "text", name_ "mail"];
+                br_ [];
                 div_ [class_ "g-recaptcha", makeAttribute "data-sitekey" "6LeYpckUAAAAAN_aUWfpPXJYuC7J6DtbKmQAMZKE"] "";
                 br_ [];
                 input_ [type_ "submit"];

@@ -20,6 +20,8 @@ import qualified Text.HTML.SanitizeXSS as S
 import qualified Text.Read as R
 import qualified Control.Lens as L
 import Control.Monad.IO.Class
+import Data.UUID (toString)
+import Data.UUID.V1
 
 type AppAction a = SpockActionCtx () Connection AppSession AppState a
 
@@ -42,11 +44,11 @@ instance ToJSON BlogPost where
 
 main :: IO ()
 main = do
-    pool<-createPool ( do 
+    pool<-createPool ( do
         conn <- connect (ConnectInfo "localhost" 5432 "phosphorus15" "12345" "blog");
         _ <- execute_ conn "create table if not exists users (uid SERIAL PRIMARY KEY,secret character varying(512),username character varying(128),privilege integer, ty integer);";
         _ <- execute_ conn "create table if not exists posts (id SERIAL PRIMARY KEY,title character varying(256),data character varying(16384),date integer,poster character varying(128));";
-        return conn 
+        return conn
                      ) close 1 10 10;
     spockCfg <- defaultSpockCfg EmptySession (PCPool pool) EmptyState
     runSpock 8080 (spock spockCfg app)
@@ -80,23 +82,32 @@ postAction = do
     requestParam <- parsePost;
     case requestParam of
         (Just content, Just secret, Just title) -> do
-            xs <-runQuery $ \conn -> 
+            xs <-runQuery $ \conn ->
                 query conn  "select uid,secret,username,privilege from users where secret = ?" (Only secret);
             case xs :: [UserToken] of
                 [] -> setStatus Status.status400 >> text "Illegal secret code."
                 (user:xs) -> do
                     timestamp <- liftIO getUnixTime >>= return . show . utSeconds;
-                    _ <- runQuery $ \conn -> 
+                    _ <- runQuery $ \conn ->
                         execute conn  "insert into posts (data, date, poster, title) values(?, ?, ?, ?)" (content, read timestamp :: Int , name user, title);
                     redirect "/"
         _ -> setStatus Status.status400 >> text "Missing params."
 
+uuidFallback :: Maybe String -> String -> String
+uuidFallback Nothing mail = mail
+uuidFallback (Just uuid) _ = uuid
+
+
 registerAction :: AppAction ()
 registerAction = do
-    (recaptcha) <- parseRegisterRequest;
-    case recaptcha of
-        (Just token) -> do response <- liftIO $ Side.recaptcha $ T.unpack $ Lazy.toStrict token;
-                           if response then text "okay" else text "nope"
+    (recaptcha, email) <- parseRegisterRequest;
+    case (recaptcha, email) of
+        (Just token, Just mail) -> do response <- liftIO $ Side.recaptcha $ T.unpack $ Lazy.toStrict token;
+                                      if response then let mailstr = T.unpack $ Lazy.toStrict mail in
+                                                       do uuid <- fmap (fmap toString) $ liftIO nextUUID
+                                                          retval <- liftIO $ Side.sendmail mailstr $ uuidFallback uuid mailstr
+                                                          text $ fromString $ show retval
+                                                  else setStatus Status.status400 >> text "Recaptcha failed."
         _ -> setStatus Status.status400 >> text "Recaptcha failed."
 
 showPostAction :: Text -> AppAction ()
@@ -128,7 +139,8 @@ parsePostRequest = do
     pid <- param "id";
     pure (mapEmpty username, pid)
 
-parseRegisterRequest :: MonadIO m => ActionCtxT ctx m (Maybe Text)
+parseRegisterRequest :: MonadIO m => ActionCtxT ctx m (Maybe Text, Maybe Text)
 parseRegisterRequest = do
+    email <- param "mail";
     recaptcha <- param "g-recaptcha-response";
-    pure (recaptcha)
+    pure (recaptcha, email)
