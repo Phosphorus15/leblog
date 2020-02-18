@@ -54,13 +54,11 @@ instance ToJSON BlogPost where
 
 main :: IO ()
 main = do
-    pool<-createPool ( do
-        conn <- connect (ConnectInfo "localhost" 5432 "phosphorus15" "12345" "blog");
-        _ <- execute_ conn "create table if not exists users (uid SERIAL PRIMARY KEY,secret character varying(512),username character varying(128),mail character varying(128),rkey character varying(128) ,privilege integer, ty integer);";
-        _ <- execute_ conn "create table if not exists posts (id SERIAL PRIMARY KEY,title character varying(256),data character varying(16384),date integer,poster character varying(128));";
-        _ <- execute_ conn "create table if not exists login_status(uid integer, valid integer, session character varying(256))"
-        return conn
-                     ) close 1 10 10;
+    init <- connect $ ConnectInfo "localhost" 5432 "phosphorus15" "12345" "blog";
+    _ <- execute_ init "create table if not exists users (uid SERIAL PRIMARY KEY,secret character varying(512),username character varying(128),mail character varying(128),rkey character varying(128) ,privilege integer, ty integer);";
+    _ <- execute_ init "create table if not exists posts (id SERIAL PRIMARY KEY,title character varying(256),data character varying(16384),date integer,poster character varying(128));";
+    _ <- execute_ init "create table if not exists login_status(uid integer, valid integer, session character varying(256))"
+    pool <- createPool ( connect $ ConnectInfo "localhost" 5432 "phosphorus15" "12345" "blog" ) close 1 10 10;
     spockCfg <- defaultSpockCfg EmptySession (PCPool pool) EmptyState
     runSpock 8080 (spock spockCfg app)
 
