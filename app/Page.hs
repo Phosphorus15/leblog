@@ -23,7 +23,7 @@ staticMain = renderText (
                         a_ [href_ "/", class_ "logo"] "Welcome to the blogging system";
                     nav_ [class_ "links"] $ do
                         ul_ [class_ "hide-links"] $ do
-                            li_ [] $ a_ [href_ "./post"] "Create new post";
+                            li_ [] $ a_ [href_ "./login"] "Login";
                             li_ [] $ a_ [href_ "./register"] "Register";
                 main_ [class_ "main"] $ do
                     h3_ "Recent Posts : ";
@@ -51,7 +51,7 @@ dynamicUser username = renderText (
                     nav_ [class_ "links"] $ do
                         ul_ [class_ "hide-links"] $ do
                             li_ [] $ a_ [href_ "/"] "Return";
-                            li_ [] $ a_ [href_ "/register"] "Register";
+                            li_ [] $ a_ [href_ "./login"] "Login";
                 main_ [class_ "main"] $ do
                     h3_ "Recent Posts : ";
                     section_ [id_ "posts-billboard", class_ "posts", style_ "position: relative;"] $ do
@@ -110,8 +110,31 @@ staticRegister = renderText (
                 termWith "script" [src_ "//recaptcha.net/recaptcha/api.js", makeAttribute "async" "", makeAttribute "defer" ""] "";
         body_ $ do
             form_ [method_ "post"] $ do
+                div_ "Username:";
+                input_ [type_ "text", name_ "username"];
+                br_ [];
                 div_ "Your email here:";
                 input_ [type_ "text", name_ "mail"];
+                br_ [];
+                div_ "Password:";
+                input_ [type_ "password", name_ "pwd"];
+                br_ [];
+                div_ [class_ "g-recaptcha", makeAttribute "data-sitekey" "6LeYpckUAAAAAN_aUWfpPXJYuC7J6DtbKmQAMZKE"] "";
+                br_ [];
+                input_ [type_ "submit"];
+                            )
+
+staticLogin = renderText (
+    html_ $ do
+        head_ $ title_ "Login";
+                termWith "script" [src_ "//recaptcha.net/recaptcha/api.js", makeAttribute "async" "", makeAttribute "defer" ""] "";
+        body_ $ do
+            form_ [method_ "post"] $ do
+                div_ "Username:";
+                input_ [type_ "text", name_ "username"];
+                br_ [];
+                div_ "Password:";
+                input_ [type_ "password", name_ "pwd"];
                 br_ [];
                 div_ [class_ "g-recaptcha", makeAttribute "data-sitekey" "6LeYpckUAAAAAN_aUWfpPXJYuC7J6DtbKmQAMZKE"] "";
                 br_ [];

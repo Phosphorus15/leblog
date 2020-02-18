@@ -32,11 +32,21 @@ data BlogPost = BlogPost { postId :: Int, title :: String, postData :: String, d
 
 data UserToken = UserToken { uid :: Int, secret :: String, name :: String, privilege :: Int } deriving Show
 
+data UserInfo = UserInfo { id :: Int, username :: String, mail :: String}
+
+data LoginInfo = LoginInfo { lid :: Int, valid :: Int, session :: String }
+
 instance FromRow BlogPost where
     fromRow = BlogPost <$> field <*> field <*> field <*> field <*> field
 
 instance FromRow UserToken where
     fromRow = UserToken <$> field <*> field <*> field <*> field
+
+instance FromRow UserInfo where
+    fromRow = UserInfo <$> field <*> field <*> field
+
+instance FromRow LoginInfo where
+    fromRow = LoginInfo <$> field <*> field <*> field
 
 instance ToJSON BlogPost where
     toJSON (BlogPost pid title content date poster) 
@@ -46,12 +56,17 @@ main :: IO ()
 main = do
     pool<-createPool ( do
         conn <- connect (ConnectInfo "localhost" 5432 "phosphorus15" "12345" "blog");
-        _ <- execute_ conn "create table if not exists users (uid SERIAL PRIMARY KEY,secret character varying(512),username character varying(128),privilege integer, ty integer);";
+        _ <- execute_ conn "create table if not exists users (uid SERIAL PRIMARY KEY,secret character varying(512),username character varying(128),mail character varying(128),rkey character varying(128) ,privilege integer, ty integer);";
         _ <- execute_ conn "create table if not exists posts (id SERIAL PRIMARY KEY,title character varying(256),data character varying(16384),date integer,poster character varying(128));";
+        _ <- execute_ conn "create table if not exists login_status(uid integer, valid integer, session character varying(256))"
         return conn
                      ) close 1 10 10;
     spockCfg <- defaultSpockCfg EmptySession (PCPool pool) EmptyState
     runSpock 8080 (spock spockCfg app)
+
+-- Invokes when a 4xx status should be responsed
+panic :: T.Text -> AppAction()
+panic err = setStatus Status.status400 >> text err
 
 app :: SpockM Connection AppSession AppState ()
 app = do
@@ -60,12 +75,23 @@ app = do
     get "posts" requestPostsAction
     get "post" $ html $ Lazy.toStrict Page.staticPost
     get "register" $ html $ Lazy.toStrict Page.staticRegister
+    get "login" $ html $ Lazy.toStrict Page.staticLogin
     get ("u" <//> var) $ \user -> do
         html $ Lazy.toStrict $ Page.dynamicUser user
     get ("p" <//> var) showPostAction
+    get ("re" <//> var) mailRegisterAction
     post "post" registerAction
     post "register" registerAction
-    hookAny GET $ \_ -> text "Page not found"
+    post "login" loginAction
+    hookAny GET $ \_ -> checkLogin >>= (\t -> text $ "Page not found. \n" <> fromString (show t));
+
+-- Returns the uid of current user according to session id
+checkLogin :: AppAction (Maybe Int)
+checkLogin = do session <- getSessionId
+                status <- runQuery $ \conn -> query conn "select * from login_status where session = ?" (Only session)
+                case (status :: [LoginInfo]) of
+                    [] -> pure Nothing
+                    (l:_) -> pure $ Just $ lid l
 
 requestPostsAction :: AppAction ()
 requestPostsAction = do
@@ -85,30 +111,58 @@ postAction = do
             xs <-runQuery $ \conn ->
                 query conn  "select uid,secret,username,privilege from users where secret = ?" (Only secret);
             case xs :: [UserToken] of
-                [] -> setStatus Status.status400 >> text "Illegal secret code."
+                [] -> panic "Illegal secret code."
                 (user:xs) -> do
                     timestamp <- liftIO getUnixTime >>= return . show . utSeconds;
                     _ <- runQuery $ \conn ->
                         execute conn  "insert into posts (data, date, poster, title) values(?, ?, ?, ?)" (content, read timestamp :: Int , name user, title);
                     redirect "/"
-        _ -> setStatus Status.status400 >> text "Missing params."
+        _ -> panic "Missing params."
 
 uuidFallback :: Maybe String -> String -> String
 uuidFallback Nothing mail = mail
 uuidFallback (Just uuid) _ = uuid
 
-
 registerAction :: AppAction ()
 registerAction = do
-    (recaptcha, email) <- parseRegisterRequest;
-    case (recaptcha, email) of
-        (Just token, Just mail) -> do response <- liftIO $ Side.recaptcha $ T.unpack $ Lazy.toStrict token;
-                                      if response then let mailstr = T.unpack $ Lazy.toStrict mail in
-                                                       do uuid <- fmap (fmap toString) $ liftIO nextUUID
-                                                          retval <- liftIO $ Side.sendmail mailstr $ uuidFallback uuid mailstr
-                                                          text $ fromString $ show retval
-                                                  else setStatus Status.status400 >> text "Recaptcha failed."
-        _ -> setStatus Status.status400 >> text "Recaptcha failed."
+    (recaptcha, email, username, pwd) <- parseRegisterRequest;
+    case (recaptcha, email, username, pwd) of
+        (Just token, Just mail, Just name, Just password) -> do response <- liftIO $ Side.recaptcha $ T.unpack $ Lazy.toStrict token;
+                                                                if response then let mailstr = T.unpack $ Lazy.toStrict mail in
+                                                                    do uuid <- fmap (fmap toString) $ liftIO nextUUID
+                                                                       retval <- liftIO $ Side.sendmail mailstr $ uuidFallback uuid mailstr
+                                                                       _ <- runQuery $ \conn ->
+                                                                           execute conn "insert into users (secret, username, mail, rkey, privilege, ty) values (?, ?, ?, ?, ?, ?)" (password, name, mail, uuidFallback uuid mailstr, 1 :: Int, -1 :: Int)
+                                                                       text "Verification mail has been sent, please follow the mail to complete your registration"
+                                                                else panic "Recaptcha failed."
+        _ -> panic "Missing field or recaptcha failed."
+
+loginAction :: AppAction ()
+loginAction = do
+    (recaptcha, username, pwd) <- parseLoginRequest;
+    case (recaptcha, username, pwd) of
+        (Just token, Just name, Just password) -> do response <- liftIO $ Side.recaptcha $ T.unpack $ Lazy.toStrict token;
+                                                     if response then do users <- runQuery $ \conn ->
+                                                                                 query conn "select uid, username, secret, privilege from users where username = ? and secret = ?" (name, password)
+                                                                         case (users :: [UserToken]) of
+                                                                             [] -> panic "Incorrect login identities"
+                                                                             (u:xs) -> do session <- getSessionId
+                                                                                          _ <- runQuery $ \conn->
+                                                                                              execute conn "insert into login_status values (?, ?, ?)" (uid u, 1 :: Int, session)
+                                                                                          text "login success"
+                                                     else panic "Recaptcha failed"
+
+mailRegisterAction :: Text -> AppAction ()
+mailRegisterAction registerKey = do
+    xs <- runQuery $ \conn ->
+        query conn "select uid, username, mail from users where rkey = ?" (Only registerKey)
+    case xs :: [UserInfo] of
+        [] -> panic "Illegal request link."
+        (user:xs) -> do
+            _ <- runQuery $ \conn ->
+                execute conn "update users set ty = 1 where rkey = ?" (Only registerKey)
+            text "Registration complete"
+
 
 showPostAction :: Text -> AppAction ()
 showPostAction pid = do
@@ -120,7 +174,7 @@ showPostAction pid = do
                 [] -> setStatus Status.status404 >> text "Post id not found."
                 (post:xs) -> do
                     html $ Lazy.toStrict $ Page.dynamicPost pid (poster post)
-        Nothing ->  setStatus Status.status400 >> text "Invalid post request."
+        Nothing -> panic "Invalid post request."
 
 parsePost :: MonadIO m => ActionCtxT ctx m (Maybe Text, Maybe Text, Maybe Text)
 parsePost = do
@@ -139,8 +193,17 @@ parsePostRequest = do
     pid <- param "id";
     pure (mapEmpty username, pid)
 
-parseRegisterRequest :: MonadIO m => ActionCtxT ctx m (Maybe Text, Maybe Text)
+parseRegisterRequest :: MonadIO m => ActionCtxT ctx m (Maybe Text, Maybe Text, Maybe Text, Maybe Text)
 parseRegisterRequest = do
     email <- param "mail";
+    pwd <- param "pwd";
+    username <- param "username";
     recaptcha <- param "g-recaptcha-response";
-    pure (recaptcha, email)
+    pure (recaptcha, email, username, pwd)
+
+parseLoginRequest :: MonadIO m => ActionCtxT ctx m (Maybe Text, Maybe Text, Maybe Text)
+parseLoginRequest = do
+    pwd <- param "pwd";
+    username <- param "username";
+    recaptcha <- param "g-recaptcha-response";
+    pure (recaptcha, username, pwd)
