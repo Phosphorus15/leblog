@@ -65,6 +65,7 @@ executable leblog-exe
     , unix-time
     , xss-sanitize
     , lens
+    , cryptonite
     , unordered-containers
     , http-conduit
   default-language: Haskell2010

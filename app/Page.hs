@@ -107,9 +107,11 @@ staticPost = renderText (
 staticRegister = renderText (
     html_ $ do
         head_ $ title_ "Register";
+                termWith "script" [src_ "https://cdn.bootcss.com/js-scrypt/1.2.0/scrypt.min.js"] "";
+                termWith "script" [src_ "./crypto.js"] "";
                 termWith "script" [src_ "//recaptcha.net/recaptcha/api.js", makeAttribute "async" "", makeAttribute "defer" ""] "";
         body_ $ do
-            form_ [method_ "post"] $ do
+            form_ [name_ "register", method_ "post"] $ do
                 div_ "Username:";
                 input_ [type_ "text", name_ "username"];
                 br_ [];
@@ -127,9 +129,11 @@ staticRegister = renderText (
 staticLogin = renderText (
     html_ $ do
         head_ $ title_ "Login";
+                termWith "script" [src_ "https://cdn.bootcss.com/js-scrypt/1.2.0/scrypt.min.js"] "";
+                termWith "script" [src_ "./crypto.js"] "";
                 termWith "script" [src_ "//recaptcha.net/recaptcha/api.js", makeAttribute "async" "", makeAttribute "defer" ""] "";
         body_ $ do
-            form_ [method_ "post"] $ do
+            form_ [name_ "login", method_ "post", onsubmit_ "login.password.value = password_hash(login.pwd.value, login.username.value); return true;"] $ do
                 div_ "Username:";
                 input_ [type_ "text", name_ "username"];
                 br_ [];
