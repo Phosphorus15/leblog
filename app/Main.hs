@@ -9,6 +9,7 @@ import Network.Wai.Middleware.Static
 import Data.Pool
 import Data.String
 import Data.Aeson (ToJSON(toJSON), object, (.=),Value)
+import Data.List (intercalate)
 import Database.PostgreSQL.Simple.FromRow
 import Data.Text.Lazy as Lazy
 import Control.Monad.IO.Class
@@ -69,11 +70,11 @@ panic err = setStatus Status.status400 >> text err
 app :: SpockM Connection AppSession AppState ()
 app = do
     middleware (staticPolicy (addBase "static"))
-    get root $ html $ Lazy.toStrict Page.staticMain
+    get root $ redirect "index.html"
     get "posts" requestPostsAction
     get "post" $ html $ Lazy.toStrict Page.staticPost
-    get "register" $ html $ Lazy.toStrict Page.staticRegister
-    get "login" $ html $ Lazy.toStrict Page.staticLogin
+   -- get "register" $ html $ Lazy.toStrict Page.staticRegister
+   -- get "login" $ html $ Lazy.toStrict Page.staticLogin
     get ("u" <//> var) $ \user -> do
         html $ Lazy.toStrict $ Page.dynamicUser user
     get ("p" <//> var) showPostAction
@@ -81,7 +82,7 @@ app = do
     post "post" registerAction
     post "register" registerAction
     post "login" loginAction
-    hookAny GET $ \_ -> checkLogin >>= (\t -> text $ "Page not found. \n" <> fromString (show t));
+    hookAny GET $ \path -> redirect $ fromString ("/#/" ++ (Data.List.intercalate "/" $ Prelude.map T.unpack path)) -- checkLogin >>= (\t -> text $ "Page not found. \n" <> fromString (show t));
 
 -- Returns the uid of current user according to session id
 checkLogin :: AppAction (Maybe Int)
@@ -160,7 +161,6 @@ mailRegisterAction registerKey = do
             _ <- runQuery $ \conn ->
                 execute conn "update users set ty = 1 where rkey = ?" (Only registerKey)
             text "Registration complete"
-
 
 showPostAction :: Text -> AppAction ()
 showPostAction pid = do

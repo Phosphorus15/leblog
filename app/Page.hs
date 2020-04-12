@@ -7,7 +7,7 @@ import Data.String
 
 staticMain = renderText (
     html_ $ do
-        head_ $ do 
+        head_ $ do
             title_ "Le Blog";
             termWith "script" [src_ "https://cdn.bootcss.com/jquery/3.4.1/jquery.min.js"] "";
             link_ [rel_ "stylesheet", href_ "https://cdn.bootcss.com/highlight.js/9.15.10/styles/default.min.css"];
@@ -143,4 +143,4 @@ staticLogin = renderText (
                 div_ [class_ "g-recaptcha", makeAttribute "data-sitekey" "6LeYpckUAAAAAN_aUWfpPXJYuC7J6DtbKmQAMZKE"] "";
                 br_ [];
                 input_ [type_ "submit"];
-                            )
+                        )
