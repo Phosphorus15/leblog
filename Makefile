@@ -9,7 +9,7 @@ react:
 	cd leblog-front && $(NPM) run build
 
 deploy:
-	cp leblog-front/build/* ./static/
+	cp -r leblog-front/build/* ./static/
 
 run:
 	stack run
