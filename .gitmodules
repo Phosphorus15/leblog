@@ -1,3 +1,4 @@
 [submodule "leblog-front"]
 	path = leblog-front
 	url = https://github.com/Phosphorus15/leblog-front.git
+	branch = master
