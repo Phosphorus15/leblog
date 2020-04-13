@@ -3,3 +3,4 @@ leblog-exe
 sendgrid.token
 recaptcha.server
 *~
+static/**
