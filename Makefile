@@ -12,4 +12,4 @@ deploy:
 	cp -r leblog-front/build/* ./static/
 
 run:
-	stack run
+	$(STACK) run
