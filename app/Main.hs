@@ -79,7 +79,7 @@ app = do
         html $ Lazy.toStrict $ Page.dynamicUser user
     get ("p" <//> var) showPostAction
     get ("re" <//> var) mailRegisterAction
-    post "post" registerAction
+    post "post" postAction
     post "register" registerAction
     post "login" loginAction
     hookAny GET $ \path -> redirect $ fromString ("/#/" ++ (Data.List.intercalate "/" $ Prelude.map T.unpack path)) -- checkLogin >>= (\t -> text $ "Page not found. \n" <> fromString (show t));
