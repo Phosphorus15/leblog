@@ -106,16 +106,19 @@ postAction :: AppAction ()
 postAction = do
     requestParam <- parsePost;
     case requestParam of
-        (Just content, Just secret, Just title) -> do
-            xs <-runQuery $ \conn ->
-                query conn  "select uid,secret,username,privilege from users where secret = ?" (Only secret);
-            case xs :: [UserToken] of
-                [] -> panic "Illegal secret code."
-                (user:xs) -> do
-                    timestamp <- liftIO getUnixTime >>= return . show . utSeconds;
-                    _ <- runQuery $ \conn ->
-                        execute conn  "insert into posts (data, date, poster, title) values(?, ?, ?, ?)" (content, read timestamp :: Int , name user, title);
-                    redirect "/"
+        (Just content, Just title) -> do
+            status <- checkLogin
+            case status of
+                Just uid -> do xs <-runQuery $ \conn ->
+                                query conn  "select uid,secret,username,privilege from users where uid = ?" (Only uid);
+                               case xs :: [UserToken] of
+                                [] -> panic "Illegal secret code."
+                                (user:xs) -> do
+                                   timestamp <- liftIO getUnixTime >>= return . show . utSeconds;
+                                   _ <- runQuery $ \conn ->
+                                       execute conn  "insert into posts (data, date, poster, title) values(?, ?, ?, ?)" (content, read timestamp :: Int , name user, title);
+                                       redirect "/"
+                Nothing -> panic "Please login before making a post"
         _ -> panic "Missing params."
 
 uuidFallback :: Maybe String -> String -> String
@@ -174,12 +177,11 @@ showPostAction pid = do
                     html $ Lazy.toStrict $ Page.dynamicPost pid (poster post)
         Nothing -> panic "Invalid post request."
 
-parsePost :: MonadIO m => ActionCtxT ctx m (Maybe Text, Maybe Text, Maybe Text)
+parsePost :: MonadIO m => ActionCtxT ctx m (Maybe Text, Maybe Text)
 parsePost = do
     content <- param "content";
-    secret <- param "secret";
     title <- param "title";
-    pure $ L.over L.each mapEmpty (content, secret, title)
+    pure $ L.over L.each mapEmpty (content, title)
 
 mapEmpty :: Maybe Text -> Maybe Text
 mapEmpty Nothing = Nothing
