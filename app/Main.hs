@@ -153,6 +153,7 @@ loginAction = do
                                                                                               execute conn "insert into login_status values (?, ?, ?)" (uid u, 1 :: Int, session)
                                                                                           text "login success"
                                                      else panic "Recaptcha failed"
+        _ -> panic "Missing field or recaptcha failed."
 
 mailRegisterAction :: Text -> AppAction ()
 mailRegisterAction registerKey = do
