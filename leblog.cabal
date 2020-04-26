@@ -68,6 +68,9 @@ executable leblog-exe
     , cryptonite
     , unordered-containers
     , http-conduit
+    , wai
+    , case-insensitive
+    , split
   default-language: Haskell2010
 
 test-suite leblog-test

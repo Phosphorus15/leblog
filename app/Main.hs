@@ -3,6 +3,7 @@ import Web.Spock
 import qualified Page
 import qualified Renderer
 import qualified Side
+import qualified Relay
 import Web.Spock.Config
 import Database.PostgreSQL.Simple
 import Network.Wai.Middleware.Static
@@ -70,14 +71,15 @@ panic err = setStatus Status.status400 >> text err
 app :: SpockM Connection AppSession AppState ()
 app = do
     middleware (staticPolicy (addBase "static"))
+    middleware (Relay.userRelay)
     get root $ redirect "index.html"
     get "posts" requestPostsAction
     get "post" $ html $ Lazy.toStrict Page.staticPost
    -- get "register" $ html $ Lazy.toStrict Page.staticRegister
    -- get "login" $ html $ Lazy.toStrict Page.staticLogin
-    get ("u" <//> var) $ \user -> do
-        html $ Lazy.toStrict $ Page.dynamicUser user
-    get ("p" <//> var) showPostAction
+   -- get ("u" <//> var) $ \user -> do
+   --     html $ Lazy.toStrict $ Page.dynamicUser user
+   -- get ("p" <//> var) showPostAction
     get ("re" <//> var) mailRegisterAction
     post "post" postAction
     post "register" registerAction
